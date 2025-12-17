@@ -421,6 +421,18 @@ footer p {
     margin: 0.5rem 0;
 }
 
+/* Animation classes */
+.fade-in-element {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.fade-in-element.animated {
+    opacity: 1;
+    transform: translateY(0);
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .nav-links {

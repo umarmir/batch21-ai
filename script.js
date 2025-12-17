@@ -14,6 +14,13 @@ function fetchLinkedInJobs() {
     }, 1000);
 }
 
+// Helper function to escape HTML to prevent XSS
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 // Display demo jobs
 function displayDemoJobs() {
     const jobResults = document.getElementById('jobResults');
@@ -77,20 +84,29 @@ function displayDemoJobs() {
     
     let jobsHTML = '';
     demoJobs.forEach(job => {
+        // Escape all user-provided content to prevent XSS
+        const safeTitle = escapeHtml(job.title);
+        const safeCompany = escapeHtml(job.company);
+        const safeLocation = escapeHtml(job.location);
+        const safePosted = escapeHtml(job.posted);
+        const safeDescription = escapeHtml(job.description);
+        const safeType = escapeHtml(job.type);
+        const safeLink = escapeHtml(job.link);
+        
         jobsHTML += `
             <div class="job-card demo">
                 <div class="job-header">
-                    <h3>${job.title}</h3>
-                    <span class="company">${job.company}</span>
+                    <h3>${safeTitle}</h3>
+                    <span class="company">${safeCompany}</span>
                 </div>
                 <div class="job-details">
-                    <span class="location">📍 ${job.location}</span>
-                    <span class="posted">🕒 Posted ${job.posted}</span>
+                    <span class="location">📍 ${safeLocation}</span>
+                    <span class="posted">🕒 Posted ${safePosted}</span>
                 </div>
-                <p class="job-description">${job.description}</p>
+                <p class="job-description">${safeDescription}</p>
                 <div class="job-footer">
-                    <span class="job-type">${job.type}</span>
-                    <a href="${job.link}" target="_blank" class="btn-apply">View on LinkedIn</a>
+                    <span class="job-type">${safeType}</span>
+                    <a href="${safeLink}" target="_blank" rel="noopener noreferrer" class="btn-apply">View on LinkedIn</a>
                 </div>
             </div>
         `;
@@ -101,6 +117,12 @@ function displayDemoJobs() {
 
 // Smooth scrolling for navigation links
 document.addEventListener('DOMContentLoaded', function() {
+    // Set current year in footer
+    const currentYearSpan = document.getElementById('currentYear');
+    if (currentYearSpan) {
+        currentYearSpan.textContent = new Date().getFullYear();
+    }
+    
     // Smooth scroll
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function (e) {
@@ -128,17 +150,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const observer = new IntersectionObserver(function(entries) {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
-                entry.target.style.opacity = '1';
-                entry.target.style.transform = 'translateY(0)';
+                entry.target.classList.add('animated');
             }
         });
     }, observerOptions);
     
     // Observe all cards for animation
     document.querySelectorAll('.week-card, .job-card, .pillar').forEach(card => {
-        card.style.opacity = '0';
-        card.style.transform = 'translateY(20px)';
-        card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+        card.classList.add('fade-in-element');
         observer.observe(card);
     });
 });
@@ -149,25 +168,33 @@ const linkedInAPIGuide = {
     steps: [
         "1. LinkedIn Official API: Register for LinkedIn API access at https://www.linkedin.com/developers/",
         "2. OAuth 2.0 Authentication: Implement LinkedIn OAuth flow for user authentication",
-        "3. API Endpoints: Use LinkedIn's Job Search API endpoints",
+        "3. API Endpoints: Use LinkedIn's Job Search API endpoints with proper parameters",
         "4. Backend Service: Create a backend (Node.js, Python, etc.) to handle API requests securely",
         "5. Rate Limits: Be aware of LinkedIn's API rate limits and implement caching",
         "6. Alternative: Use job aggregation APIs like:",
         "   - RapidAPI LinkedIn Job Search",
         "   - Adzuna Job Search API",
         "   - The Muse Job API",
-        "   - GitHub Jobs API",
+        "   - JSearch API",
         "7. Server-side Implementation: Always make API calls from server-side to protect API keys",
         "8. Caching Strategy: Implement Redis or similar to cache job listings and reduce API calls"
     ],
     exampleBackendCode: `
-    // Example Node.js backend endpoint
+    // Example Node.js backend endpoint using a job aggregation API
     app.get('/api/jobs', async (req, res) => {
         try {
-            const response = await fetch('https://api.linkedin.com/v2/jobs', {
+            // Note: This is a placeholder. Actual API endpoints vary by provider.
+            // LinkedIn's API requires specific parameters like keywords, location, etc.
+            const response = await fetch('YOUR_JOB_API_ENDPOINT_HERE', {
                 headers: {
-                    'Authorization': 'Bearer ' + process.env.LINKEDIN_TOKEN,
+                    'Authorization': 'Bearer ' + process.env.API_TOKEN,
                     'Content-Type': 'application/json'
+                },
+                params: {
+                    keywords: 'DevOps',
+                    location: 'United States',
+                    experience: 'entry-level',
+                    date_posted: 'last3days'
                 }
             });
             const jobs = await response.json();
