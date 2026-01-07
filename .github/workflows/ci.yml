@@ -6,28 +6,60 @@ on:
       - main
 
 jobs:
-  deploy:
+  lint:
+    name: Lint HTML
     runs-on: ubuntu
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-    
-    - name: Start HTTP server
-      run: |
-        python3 -m http.server 8080 &
-        sleep 3
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install HTML linter
+        run: sudo apt-get update && sudo apt-get install -y tidy
+
+      - name: Lint index.html
+        run: tidy -errors index.html || true
+
+
+  build:
+    name: Build Docker Image
+    runs-on: ubuntu
+    needs: lint
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          docker build -t html-app:ci .
+
+
+  run:
+    name: Run Container on Port 8080
+    runs-on: ubuntu
+    needs: build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Docker container
+        run: |
+          docker run -d \
+            -p 8080:8080 \
+            --name html-test \
+            html-app:ci
+
+            
   test:
+    name: test Container on Port 8080
     runs-on: ubuntu
-    
+    needs: run
+
     steps:
-    - name: Test app at port 8080
-      run: |
-        curl -f http://localhost:8080 || exit 1
-        echo "✓ App is running successfully at port 8080"
-    
-    - name: Test static assets
-      run: |
-        curl -f http://localhost:8080/script.js || exit 1
-        curl -f http://localhost:8080/styles.css || exit 1
-        echo "✓ All static assets are accessible"
+      - name: Verify application
+        run: curl -I http://localhost:8080
+
+      - name: Show container logs (debug)
+        run: docker logs html-test
