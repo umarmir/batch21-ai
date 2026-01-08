@@ -46,6 +46,7 @@ jobs:
 
       - name: Run Docker container
         run: |
+          docker rm -f html-test
           docker run -d \
             -p 8585:8080 \
             --name html-test \
